@@ -1,0 +1,358 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>张三 - 个人简历</title>
+<style>
+  :root{
+    --ink:#1f2430;
+    --ink-2:#41485a;
+    --ink-3:#6b7280;
+    --line:#e3e6ec;
+    --accent:#1b4a8b;
+    --accent-soft:#eef3fa;
+    --ph:#b45309;
+    --ph-bg:#fef6e7;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  body{
+    background:#e9ecf1;
+    color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Source Han Sans SC","Noto Sans SC",sans-serif;
+    font-size:13.5px;
+    line-height:1.72;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  .page{
+    width:210mm;
+    min-height:297mm;
+    margin:24px auto;
+    padding:15mm 16mm 14mm;
+    background:#fff;
+    box-shadow:0 10px 30px rgba(20,30,50,.16);
+    position:relative;
+  }
+
+  /* ============ 页眉 ============ */
+  .header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:18px;
+    padding-bottom:14px;
+    border-bottom:2px solid var(--accent);
+  }
+  .header-left{flex:1;min-width:0;padding-top:2px;}
+  .name{
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:6px;
+    color:var(--ink);
+    line-height:1.2;
+  }
+  .job-title{
+    display:inline-block;
+    margin-top:8px;
+    padding:2px 10px;
+    font-size:12.5px;
+    letter-spacing:1px;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:3px;
+  }
+  .contact{
+    margin-top:11px;
+    font-size:12.5px;
+    color:var(--ink-2);
+    letter-spacing:.2px;
+  }
+  .contact span{white-space:nowrap;}
+  .contact .sep{color:#c3c9d4;margin:0 7px;}
+  .contact .label{color:var(--ink-3);margin-right:4px;}
+  .contact .value{color:var(--ink-2);}
+
+  /* 证件照预留位 —— 2寸（35mm × 49mm） */
+  .photo{
+    width:35mm;
+    height:49mm;
+    flex:0 0 auto;
+    border:1px dashed #b9c3d3;
+    border-radius:2px;
+    background:#f7f9fc;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    color:#98a3b5;
+    font-size:11px;
+    letter-spacing:1px;
+    overflow:hidden;
+  }
+  .photo svg{opacity:.55;}
+  .photo img{width:100%;height:100%;object-fit:cover;display:block;}
+
+  /* ============ 章节 ============ */
+  .section{margin-top:17px;}
+  .sec-title{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:14.5px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--accent);
+    margin-bottom:9px;
+  }
+  .sec-title::before{
+    content:"";
+    width:3px;height:14px;
+    background:var(--accent);
+    border-radius:1px;
+  }
+  .sec-title::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:linear-gradient(to right,var(--line),rgba(227,230,236,0));
+  }
+
+  /* ---- 教育背景 ---- */
+  .edu-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+    padding:5px 0;
+  }
+  .edu-item + .edu-item{border-top:1px dashed #eef0f4;}
+  .edu-main{font-size:13.5px;}
+  .edu-main b{font-weight:700;color:var(--ink);}
+  .edu-main .major{color:var(--ink-2);}
+  .edu-date{
+    flex:0 0 auto;
+    font-size:12.5px;
+    color:var(--ink-3);
+    letter-spacing:.5px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- 专业技能 ---- */
+  .skill{
+    display:grid;
+    grid-template-columns:112px 1fr;
+    gap:10px;
+    padding:5px 0;
+  }
+  .skill + .skill{border-top:1px dashed #eef0f4;}
+  .skill-key{
+    font-weight:700;
+    color:var(--ink);
+    font-size:13px;
+    letter-spacing:.3px;
+    white-space:nowrap;
+  }
+  .skill-key::before{
+    content:"";
+    display:inline-block;
+    width:5px;height:5px;
+    margin-right:7px;
+    margin-bottom:2px;
+    border-radius:50%;
+    background:var(--accent);
+    vertical-align:middle;
+  }
+  .skill-val{color:var(--ink-2);}
+  .skill-val b{color:var(--ink);font-weight:700;}
+
+  /* ---- 项目经历 ---- */
+  .proj-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+    margin-bottom:3px;
+  }
+  .proj-name{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.3px;}
+  .proj-date{flex:0 0 auto;font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;}
+  .proj-desc{color:var(--ink-2);text-align:justify;}
+  .proj-list{margin-top:6px;}
+  .proj-list .item{
+    position:relative;
+    padding-left:15px;
+    margin-bottom:4px;
+    color:var(--ink-2);
+    text-align:justify;
+  }
+  .proj-list .item::before{
+    content:"";
+    position:absolute;
+    left:3px;top:9px;
+    width:4px;height:4px;
+    border-radius:50%;
+    background:#9fb2cc;
+  }
+  .proj-list .item b{color:var(--ink);font-weight:700;}
+
+  /* 待补充数值高亮 */
+  .ph{
+    color:var(--ph);
+    background:var(--ph-bg);
+    border-bottom:1px dashed #e3b872;
+    padding:0 3px;
+    border-radius:2px;
+    font-weight:700;
+  }
+
+  /* ---- 荣誉证书 ---- */
+  .honor .item{
+    position:relative;
+    padding-left:15px;
+    margin-bottom:3px;
+    color:var(--ink-2);
+  }
+  .honor .item::before{
+    content:"";
+    position:absolute;
+    left:3px;top:9px;
+    width:4px;height:4px;
+    border-radius:50%;
+    background:#9fb2cc;
+  }
+  .honor .item b{color:var(--ink);font-weight:700;}
+
+  /* ---- 自我评价 ---- */
+  .summary{
+    color:var(--ink-2);
+    text-align:justify;
+    padding:2px 0;
+  }
+
+  @media print{
+    @page{size:A4;margin:0;}
+    body{background:#fff;}
+    .page{
+      margin:0;
+      box-shadow:none;
+      width:210mm;
+      min-height:297mm;
+      height:297mm;
+      overflow:hidden;
+    }
+    .section{break-inside:avoid;page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ================= 页眉 ================= -->
+  <header class="header">
+    <div class="header-left">
+      <div class="name">张&nbsp;三</div>
+      <div class="job-title">求职意向：大模型推理优化 / 高性能计算工程师</div>
+      <div class="contact">
+        <span><span class="label">年龄</span><span class="value">23岁</span></span><span class="sep">|</span>
+        <span><span class="label">手机号</span><span class="value">17812345678</span></span><span class="sep">|</span>
+        <span><span class="label">邮箱</span><span class="value">2341234@qq.com</span></span>
+      </div>
+      <div class="contact">
+        <span><span class="label">求职城市</span><span class="value">杭州 / 上海</span></span><span class="sep">|</span>
+        <span><span class="label">计划实习时长</span><span class="value">三个月</span></span>
+      </div>
+    </div>
+
+    <!-- 证件照预留位：替换为 <img src="photo.jpg" alt="证件照"> 即可 -->
+    <div class="photo">
+      <!-- 将 photo.jpg 放在本 HTML 同目录；也可以改成你的图片文件名 -->
+      <img src="photo.jpg" alt="证件照">
+    </div>
+  </header>
+
+  <!-- ================= 教育背景 ================= -->
+  <section class="section">
+    <div class="sec-title">教育背景</div>
+    <div class="edu-item">
+      <div class="edu-main"><b>浙江大学</b>　<span class="major">计算机学院　硕士</span></div>
+      <div class="edu-date">2025.09 — 至今</div>
+    </div>
+    <div class="edu-item">
+      <div class="edu-main"><b>浙江工业大学</b>　<span class="major">计算机学院　本科</span></div>
+      <div class="edu-date">2021.09 — 2025.06</div>
+    </div>
+  </section>
+
+  <!-- ================= 专业技能 ================= -->
+  <section class="section">
+    <div class="sec-title">专业技能</div>
+
+    <div class="skill">
+      <div class="skill-key">编程语言</div>
+      <div class="skill-val">熟练掌握 <b>Python</b>，熟悉 <b>C / C++</b>，具备良好的代码规范与工程习惯。</div>
+    </div>
+
+    <div class="skill">
+      <div class="skill-key">深度学习框架</div>
+      <div class="skill-val">熟练使用 <b>PyTorch</b> 进行模型开发，熟悉 <b>Transformer 架构</b>及主流 LLM 模型结构。</div>
+    </div>
+
+    <div class="skill">
+      <div class="skill-key">高性能计算</div>
+      <div class="skill-val">熟悉 <b>OpenAI Triton</b> 编程，能够手写高性能算子；了解 <b>CUDA</b> 编程模型；熟练使用 <b>torch.profiler / Nsight</b> 进行性能分析。</div>
+    </div>
+
+    <div class="skill">
+      <div class="skill-key">LLM 推理技术</div>
+      <div class="skill-val">理解 <b>vLLM</b> 原理，熟悉 <b>PagedAttention、FlashAttention-2、FlashDecoding、Continuous Batching</b> 等核心推理加速技术。</div>
+    </div>
+  </section>
+
+  <!-- ================= 项目经历 ================= -->
+  <section class="section">
+    <div class="sec-title">项目经历</div>
+
+    <div class="proj-head">
+      <div class="proj-name">基于 Triton 与 PyTorch 的轻量级大模型推理框架开发</div>
+      <div class="proj-date">2025.09 — 至今</div>
+    </div>
+    <div class="proj-desc">
+      针对现有框架的学习与研究，从零构建了一个支持主流模型（Llama 3.2、Qwen 等）的轻量级推理引擎，重点优化了算子性能与显存管理。
+    </div>
+
+    <div class="proj-list">
+      <div class="item">
+        <b>架构设计与模型适配：</b>采用注册式（Registry）模式设计模型加载接口，成功适配 Llama 3.2 及 Qwen 系列模型，解耦了模型定义与推理逻辑。
+      </div>
+      <div class="item">
+        <b>Triton 算子融合与优化：</b>使用 OpenAI Triton 重构核心计算层。实现了 Autotune GEMM 以自动适配不同 Shape；针对 Llama 结构，手动融合了 SwiGLU + Skip Connection + RMSNorm 算子，显著减少了 Kernel Launch 开销与显存读写次数。性能提升 <span class="ph">xx%</span>（单算子）／<span class="ph">xx%</span>（整体端到端）。
+      </div>
+      <div class="item">
+        <b>注意力机制加速：</b>在 Prefill 阶段集成 FlashAttention-2，在 Decode 阶段实现 FlashDecoding，优化了长 Context 下的推理延迟。
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 荣誉证书 ================= -->
+  <section class="section">
+    <div class="sec-title">荣誉证书</div>
+    <div class="honor">
+      <div class="item">全国大学生数学竞赛（第十六届）　浙江赛区省级一等奖</div>
+      <div class="item">英语能力：通过CET-4、CET-6考试，具备良好的英文文档阅读能力。</div>
+    </div>
+  </section>
+
+  <!-- ================= 自我评价 ================= -->
+  <section class="section">
+    <div class="sec-title">自我评价</div>
+    <div class="summary">
+      工作认真负责，有较强的分析能力；勤奋好学，对新技术怀有热忱，具备较强的自驱力与持续钻研精神。
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
