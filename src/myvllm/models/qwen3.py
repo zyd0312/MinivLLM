@@ -13,6 +13,7 @@ Qwen3 模型实现
 """
 
 from myvllm.layers import *
+from myvllm.utils.quant_config import GPTQConfig
 import torch
 import torch.nn as nn
 
@@ -54,6 +55,8 @@ class Qwen3Attention(nn.Module):
         base: int = 10000,
         max_position: int = 16384,
         block_size: int = 256,
+        quant_config: GPTQConfig | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         # 获取张量并行的 GPU 数量
@@ -71,13 +74,22 @@ class Qwen3Attention(nn.Module):
         self.scale = scale
 
         # QKV 投影：列并行，将注意力头分片到不同的 GPU
-        self.qkv_projection = QKVColumnParallelLinear(
-            input_size=hidden_size,
-            head_size=head_dim,
-            num_heads=self.total_num_heads,
-            num_kv_heads=self.total_num_kv_heads,
-            bias=qkv_bias,
-        )
+        self.quant_config = quant_config
+        if quant_config is None:
+            self.qkv_projection = QKVColumnParallelLinear(
+                input_size=hidden_size,
+                head_size=head_dim,
+                num_heads=self.total_num_heads,
+                num_kv_heads=self.total_num_kv_heads,
+                bias=qkv_bias,
+                dtype=dtype,
+            )
+        else:
+            if self.tp_size != 1 or qkv_bias:
+                raise ValueError("GPTQ Qwen3 attention requires one GPU and no projection bias")
+            self.q_proj = GPTQLinear(hidden_size, head_dim * num_heads, quant_config)
+            self.k_proj = GPTQLinear(hidden_size, head_dim * self.total_num_kv_heads, quant_config)
+            self.v_proj = GPTQLinear(hidden_size, head_dim * self.total_num_kv_heads, quant_config)
         # 每个 GPU 上的 Q 和 KV 张量大小
         self.q_size = head_dim * self.num_heads
         self.kv_size = head_dim * self.num_kv_heads
@@ -85,14 +97,15 @@ class Qwen3Attention(nn.Module):
 
         # Q 和 K 归一化：Qwen3 特有，用于稳定注意力计算
         # 防止 Q·K^T 产生过大的值导致 softmax 不稳定
-        self.q_norm = LayerNorm(torch.ones(head_dim))
-        self.k_norm = LayerNorm(torch.ones(head_dim))
+        self.q_norm = LayerNorm(torch.ones(head_dim, dtype=dtype), eps=rms_norm_epsilon)
+        self.k_norm = LayerNorm(torch.ones(head_dim, dtype=dtype), eps=rms_norm_epsilon)
 
         # 旋转位置编码（RoPE）
         self.rotary_emb = RotaryEmbedding(
             base=base,
             rotary_embedding=head_dim,
-            max_position=max_position
+            max_position=max_position,
+            dtype=dtype,
         )
 
         # 注意力计算模块（支持 flash attention 和 paged attention）
@@ -105,11 +118,15 @@ class Qwen3Attention(nn.Module):
         )
 
         # 输出投影：行并行，执行 all-reduce 以聚合所有 GPU 的结果
-        self.o_proj = RowParallelLinear(
-            input_size=head_dim * self.total_num_heads,
-            output_size=hidden_size,
-            bias=False,
-        )
+        if quant_config is None:
+            self.o_proj = RowParallelLinear(
+                input_size=head_dim * self.total_num_heads,
+                output_size=hidden_size,
+                bias=False,
+                dtype=dtype,
+            )
+        else:
+            self.o_proj = GPTQLinear(head_dim * self.total_num_heads, hidden_size, quant_config)
 
     def forward(
         self,
@@ -138,7 +155,10 @@ class Qwen3Attention(nn.Module):
         # 每个 GPU 的输出形状：(B, N, head_dim * (num_heads + 2*num_kv_heads))
         # 其中 num_heads = total_num_heads / tp_size
         #      num_kv_heads = total_num_kv_heads / tp_size
-        qkv = self.qkv_projection(x)
+        if self.quant_config is None:
+            qkv = self.qkv_projection(x)
+        else:
+            qkv = torch.cat((self.q_proj(x), self.k_proj(x), self.v_proj(x)), dim=-1)
 
         # 分割 QKV
         # q_size = head_dim * num_heads     - 每个 GPU 的大小
@@ -205,23 +225,37 @@ class Qwen3MLP(nn.Module):
         hidden_size: int,
         intermediate_size: int,
         bias: bool = True,
+        quant_config: GPTQConfig | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         # gate 和 up 投影合并为一个矩阵，提高效率
         # 输出被分成两部分：[gate, up]
-        self.gate_up = MergedColumnParallelLinear(
-            input_size=hidden_size,
-            output_sizes=[intermediate_size] * 2,
-            bias=bias,
-        )
+        self.quant_config = quant_config
+        if quant_config is None:
+            self.gate_up = MergedColumnParallelLinear(
+                input_size=hidden_size,
+                output_sizes=[intermediate_size] * 2,
+                bias=bias,
+                dtype=dtype,
+            )
+        else:
+            if dist.get_world_size() != 1 or bias:
+                raise ValueError("GPTQ Qwen3 MLP requires one GPU and no projection bias")
+            self.gate_proj = GPTQLinear(hidden_size, intermediate_size, quant_config)
+            self.up_proj = GPTQLinear(hidden_size, intermediate_size, quant_config)
         # SwiGLU 激活：SiLU(gate) * up
         self.activation = SiluAndMul()
         # down 投影：将中间维度映射回隐藏维度
-        self.down_proj = RowParallelLinear(
-            input_size=intermediate_size,
-            output_size=hidden_size,
-            bias=bias,
-        )
+        if quant_config is None:
+            self.down_proj = RowParallelLinear(
+                input_size=intermediate_size,
+                output_size=hidden_size,
+                bias=bias,
+                dtype=dtype,
+            )
+        else:
+            self.down_proj = GPTQLinear(intermediate_size, hidden_size, quant_config)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -233,7 +267,11 @@ class Qwen3MLP(nn.Module):
         Returns:
             输出张量，形状为 (B, N, hidden_size)
         """
-        x = self.down_proj(self.activation(self.gate_up(x)))
+        if self.quant_config is None:
+            gate_up = self.gate_up(x)
+        else:
+            gate_up = torch.cat((self.gate_proj(x), self.up_proj(x)), dim=-1)
+        x = self.down_proj(self.activation(gate_up))
         return x
 
 
@@ -281,12 +319,14 @@ class Qwen3DecoderLayer(nn.Module):
         intermediate_size: int = 4 * 1024,
         ffn_bias: bool = True,
         block_size: int = 256,
+        quant_config: GPTQConfig | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         # 初始化归一化层的权重
-        gamma = torch.ones(hidden_size)
+        gamma = torch.ones(hidden_size, dtype=dtype)
         # 输入层归一化
-        self.input_layernorm = LayerNorm(gamma)
+        self.input_layernorm = LayerNorm(gamma, eps=rms_norm_epsilon)
         # 自注意力机制
         self.self_attn = Qwen3Attention(
             hidden_size=hidden_size,
@@ -299,14 +339,18 @@ class Qwen3DecoderLayer(nn.Module):
             base=base,
             max_position=max_position,
             block_size=block_size,
+            quant_config=quant_config,
+            dtype=dtype,
         )
         # 注意力后层归一化
-        self.post_attention_layernorm = LayerNorm(gamma)
+        self.post_attention_layernorm = LayerNorm(gamma, eps=rms_norm_epsilon)
         # 前馈神经网络
         self.mlp = Qwen3MLP(
             hidden_size=hidden_size,
             intermediate_size=intermediate_size,
             bias=ffn_bias,
+            quant_config=quant_config,
+            dtype=dtype,
         )
 
     def forward(self, x: torch.Tensor, residual: torch.Tensor | None = None) -> torch.Tensor:
@@ -405,12 +449,15 @@ class Qwen3Model(nn.Module):
         ffn_bias: bool = True,
         num_layers: int = 12,
         block_size: int = 256,
+        quant_config: GPTQConfig | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         # 词嵌入层（支持张量并行，词汇表在 GPU 间分片）
         self.embed_tokens = VocabParallelEmbedding(
             num_embeddings=vocab_size,
-            embedding_dim = hidden_size
+            embedding_dim = hidden_size,
+            dtype=dtype,
         )
         # 解码器层堆叠
         self.layers = nn.ModuleList([
@@ -427,11 +474,13 @@ class Qwen3Model(nn.Module):
                 intermediate_size=intermediate_size,
                 ffn_bias=ffn_bias,
                 block_size=block_size,
+                quant_config=quant_config,
+                dtype=dtype,
             ) for _ in range(num_layers)
         ])
         # 最终层归一化
-        gamma = torch.ones(hidden_size)
-        self.norm = LayerNorm(gamma)
+        gamma = torch.ones(hidden_size, dtype=dtype)
+        self.norm = LayerNorm(gamma, eps=rms_norm_epsilon)
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         """
@@ -516,8 +565,11 @@ class Qwen3ForCausalLM(nn.Module):
         num_layers: int = 12,
         tie_word_embeddings: bool = False,
         block_size: int = 256,
+        quant_config: GPTQConfig | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
+        self.quant_config = quant_config
         # 如果未指定 head_dim，则根据 hidden_size 和 num_heads 计算
         head_dim = head_dim if head_dim is not None else hidden_size // num_heads
         # 基础 Transformer 模型
@@ -536,11 +588,14 @@ class Qwen3ForCausalLM(nn.Module):
             ffn_bias=ffn_bias,
             num_layers=num_layers,
             block_size=block_size,
+            quant_config=quant_config,
+            dtype=dtype,
         )
         # 语言模型头（将隐藏状态映射到词汇表 logits）
         self.lm_head = ParallelLMHead(
             num_embeddings=vocab_size,
-            embedding_dim=hidden_size
+            embedding_dim=hidden_size,
+            dtype=dtype,
         )
         # 权重共享：lm_head 和嵌入层使用相同的权重矩阵
         if tie_word_embeddings:

@@ -40,6 +40,7 @@ class Scheduler:
         self.running: deque[Sequence] = deque()
         # 结束标记
         self.eos = eos
+        self.eos_ids = set(eos) if isinstance(eos, (list, tuple, set)) else {eos}
 
 
     def is_finished(self):
@@ -240,7 +241,7 @@ class Scheduler:
             # EOS token
             # Reached max_tokens limit (number of completion tokens)
             # Reached max_model_length limit (total sequence length including prompt)
-            stop_due_to_eos = not seq.ignore_eos and token_id == self.eos
+            stop_due_to_eos = not seq.ignore_eos and token_id in self.eos_ids
             stop_due_to_max_tokens = seq.num_completion_tokens >= seq.max_tokens
             stop_due_to_max_length = seq.max_model_length is not None and seq.num_tokens >= seq.max_model_length
 

@@ -4,6 +4,111 @@ import os
 from safetensors import safe_open
 from transformers import AutoConfig
 import re
+import json
+from pathlib import Path
+from myvllm.layers.gptq import GPTQLinear
+
+
+def _resolve_checkpoint_path(model_name_or_path: str) -> str:
+    from huggingface_hub import snapshot_download
+
+    checkpoint_path = os.path.expanduser(model_name_or_path)
+    if not os.path.isdir(checkpoint_path):
+        try:
+            checkpoint_path = snapshot_download(
+                repo_id=model_name_or_path,
+                allow_patterns=["*.safetensors", "*.json"],
+                ignore_patterns=["*.msgpack", "*.h5", "*.bin"],
+            )
+        except Exception as e:
+            raise ValueError(f"Could not find or download model '{model_name_or_path}': {e}") from e
+    if not os.path.isdir(checkpoint_path):
+        raise ValueError(f"Checkpoint path not found: {checkpoint_path}")
+    return checkpoint_path
+
+
+@torch.no_grad()
+def _load_gptq_checkpoint(model: nn.Module, checkpoint_path: str):
+    """Stream a checkpoint and strictly load its float and GPTQ tensors."""
+    from myvllm.utils.quant_config import GPTQConfig
+
+    with open(os.path.join(checkpoint_path, "config.json")) as f:
+        hf_config = json.load(f)
+    checkpoint_quant = GPTQConfig.from_dict(hf_config.get("quantization_config", {}))
+    if checkpoint_quant != model.quant_config:
+        raise ValueError("Model GPTQ configuration does not match checkpoint config.json")
+    if hf_config.get("tie_word_embeddings") is not True or hf_config.get("quantization_config", {}).get("lm_head") is not False:
+        raise ValueError("Expected tied embeddings and a non-quantized lm_head")
+
+    files = sorted(Path(checkpoint_path).glob("*.safetensors"))
+    if not files:
+        raise ValueError(f"No .safetensors files found in {checkpoint_path}")
+
+    key_to_file = {}
+    for file_path in files:
+        with safe_open(str(file_path), framework="pt", device="cpu") as handle:
+            for key in handle.keys():
+                if key in key_to_file:
+                    raise ValueError(f"Duplicate tensor in checkpoint shards: {key}")
+                key_to_file[key] = file_path
+
+    float_params = dict(model.named_parameters())
+    quant_modules = {
+        name: module for name, module in model.named_modules()
+        if isinstance(module, GPTQLinear)
+    }
+    if len(quant_modules) != model.model.layers.__len__() * 7:
+        raise ValueError(f"Expected 7 GPTQ projections per Qwen3 layer, found {len(quant_modules)}")
+
+    expected_keys = set(float_params)
+    for name, module in quant_modules.items():
+        expected_keys.update(f"{name}.{suffix}" for suffix in module.checkpoint_shapes())
+    actual_keys = set(key_to_file)
+    missing = sorted(expected_keys - actual_keys)
+    unexpected = sorted(actual_keys - expected_keys)
+    if missing or unexpected:
+        details = []
+        if missing:
+            details.append(f"missing={missing[:8]}" + ("..." if len(missing) > 8 else ""))
+        if unexpected:
+            details.append(f"unexpected={unexpected[:8]}" + ("..." if len(unexpected) > 8 else ""))
+        raise ValueError("Checkpoint tensor set does not match this Qwen3 GPTQ model: " + "; ".join(details))
+
+    loaded = set()
+    file_handles = {}
+    try:
+        def read_tensor(name: str) -> torch.Tensor:
+            file_path = key_to_file[name]
+            handle = file_handles.get(file_path)
+            if handle is None:
+                handle = safe_open(str(file_path), framework="pt", device="cpu")
+                file_handles[file_path] = handle
+                handle.__enter__()
+            return handle.get_tensor(name)
+
+        for name, param in float_params.items():
+            weight = read_tensor(name)
+            if tuple(param.shape) != tuple(weight.shape):
+                raise ValueError(f"{name}: expected shape {tuple(param.shape)}, got {tuple(weight.shape)}")
+            if weight.dtype != torch.float16:
+                raise ValueError(f"{name}: expected torch.float16, got {weight.dtype}")
+            param.copy_(weight.to(device=param.device, dtype=param.dtype))
+            loaded.add(name)
+
+        for name, module in quant_modules.items():
+            group = {suffix: read_tensor(f"{name}.{suffix}")
+                     for suffix in module.checkpoint_shapes()}
+            module.load_quantized_weights(group, name)
+            loaded.update(f"{name}.{suffix}" for suffix in group)
+            del group
+    finally:
+        for handle in file_handles.values():
+            handle.__exit__(None, None, None)
+
+    if len(loaded) != len(expected_keys):
+        raise RuntimeError(f"Loaded {len(loaded)} of {len(expected_keys)} expected checkpoint tensors")
+    print(f"Loaded and validated {len(float_params)} FP16 tensors and {len(quant_modules)} GPTQ projections")
+    return loaded
 
 
 def default_weight_loader(param, weight):
@@ -22,6 +127,10 @@ def load_weights_from_checkpoint(model: nn.Module, model_name_or_path: str):
         model: The target model to load weights into
         model_name_or_path: Path to local checkpoint or Hugging Face model name
     """
+    if getattr(model, "quant_config", None) is not None:
+        checkpoint_path = _resolve_checkpoint_path(model_name_or_path)
+        return _load_gptq_checkpoint(model, checkpoint_path)
+
     from huggingface_hub import snapshot_download
 
     # Try to resolve the path - could be local or from HF cache

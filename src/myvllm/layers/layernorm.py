@@ -47,12 +47,9 @@ class LayerNorm(torch.nn.Module):
         """
         # 计算均方根：RMS(x) = sqrt(mean(x²) + ε)
         # 在最后一维（hidden_size 维度）上计算
-        variance = x.pow(2).mean(dim=-1, keepdim=True) + self.eps
-        sqrt_variance = variance.sqrt()
-        # 归一化并应用可学习的缩放参数 γ
-        x_norm = (x / sqrt_variance * self.weight)
-
-        return x_norm
+        variance = x.float().pow(2).mean(dim=-1, keepdim=True) + self.eps
+        x_norm = x.float() * torch.rsqrt(variance) * self.weight.float()
+        return x_norm.to(dtype=x.dtype)
 
     def residual_rms_forward(self, x: torch.Tensor, residual: torch.Tensor) -> torch.Tensor:
         """

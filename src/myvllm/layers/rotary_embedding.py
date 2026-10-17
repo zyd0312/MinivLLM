@@ -125,6 +125,7 @@ class RotaryEmbedding(nn.Module):
         llama3_rope_high_freq_factor: float = 4.0,
         llama3_rope_low_freq_factor: float = 1.0,
         llama3_rope_original_max_position_embeddings: int = 8192,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         self.base = base
@@ -218,7 +219,7 @@ class RotaryEmbedding(nn.Module):
         """
         # 从缓存中根据位置索引取出cos和sin值
         # cos_sin形状: (seq_len, rotary_embedding)
-        cos_sin = self.cos_sin_cache[positions]
+        cos_sin = self.cos_sin_cache[positions].to(dtype=query.dtype)
 
         # 分离cos和sin，每个形状: (seq_len, rotary_embedding/2)
         cos, sin = cos_sin.chunk(2, dim=-1)

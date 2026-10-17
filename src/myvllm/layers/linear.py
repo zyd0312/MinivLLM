@@ -17,7 +17,8 @@ class LinearBase(nn.Module):
         input_size: int,       # 输入特征维度
         output_size: int,      # 输出特征维度（可能是切分后的维度）
         bias: bool = True,     # 是否使用偏置
-        tp_dim: int | None = None  # 张量并行的切分维度：0表示列切分，1表示行切分，None表示不切分
+        tp_dim: int | None = None,  # 张量并行的切分维度：0表示列切分，1表示行切分，None表示不切分
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         # 设置张量并行相关属性
@@ -27,12 +28,12 @@ class LinearBase(nn.Module):
 
         # 创建权重参数，并附加自定义加载器
         # weight_loader 允许从完整模型权重中提取当前 GPU 对应的切片
-        self.weight = nn.Parameter(torch.empty(output_size, input_size))
+        self.weight = nn.Parameter(torch.empty(output_size, input_size, dtype=dtype))
         self.weight.weight_loader = self.weight_loader
 
         # 创建偏置参数
         if bias:
-            self.bias = nn.Parameter(torch.zeros(output_size))
+            self.bias = nn.Parameter(torch.zeros(output_size, dtype=dtype))
             self.bias.weight_loader = self.weight_loader
         else:
             self.register_parameter('bias', None)
@@ -92,9 +93,10 @@ class ReplicatedLinear(LinearBase):
         self,
         input_size: int,
         output_size: int,
-        bias: bool = True
+        bias: bool = True,
+        dtype: torch.dtype | None = None,
     ):
-        super().__init__(input_size, output_size, bias)
+        super().__init__(input_size, output_size, bias, dtype=dtype)
 
     def weight_loader(self, param: nn.Parameter, loaded_weights: torch.Tensor):
         """直接复制完整权重，无需切分"""
@@ -131,11 +133,12 @@ class ColumnParallelLinear(LinearBase):
         input_size: int,
         output_size: int,
         bias: bool = True,
+        dtype: torch.dtype | None = None,
     ):
         tp_size = dist.get_world_size()
         assert output_size % tp_size == 0, "Output size must be divisible by tensor parallel size."
         # 每个 GPU 只存储 output_size/tp_size 的输出维度
-        super().__init__(input_size, output_size//tp_size, bias, tp_dim=0)
+        super().__init__(input_size, output_size//tp_size, bias, tp_dim=0, dtype=dtype)
 
     def weight_loader(self, param: nn.Parameter, loaded_weights: torch.Tensor):
         """
@@ -190,10 +193,11 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         input_size: int,
         output_sizes: list[int],  # 例如 [q_size, k_size, v_size]
         bias: bool = True,
+        dtype: torch.dtype | None = None,
     ):
         self.output_sizes = output_sizes
         # 合并后的总输出维度
-        super().__init__(input_size, sum(output_sizes), bias)
+        super().__init__(input_size, sum(output_sizes), bias, dtype=dtype)
 
     def weight_loader(self, param: nn.Parameter, loaded_weights: torch.Tensor, loaded_weight_id: int):
         """
@@ -255,6 +259,7 @@ class QKVColumnParallelLinear(ColumnParallelLinear):
         num_heads: int,           # Query 头的总数（必须能被 tp_size 整除）
         num_kv_heads: int | None = None,  # Key/Value 头的总数（默认等于 num_heads，即 MHA）
         bias: bool = False,
+        dtype: torch.dtype | None = None,
     ):
         self.tp_size = dist.get_world_size()
         num_kv_heads = num_kv_heads or num_heads  # 默认 MHA
@@ -265,7 +270,7 @@ class QKVColumnParallelLinear(ColumnParallelLinear):
         self.output_size = head_size * (self.num_heads + 2 * self.num_kv_heads)
         # 传递总输出维度给父类（父类会自动除以 tp_size）
         total_output_size = head_size * (num_heads + 2 * num_kv_heads)
-        super().__init__(input_size, total_output_size, bias=bias)
+        super().__init__(input_size, total_output_size, bias=bias, dtype=dtype)
 
     def weight_loader(self, param: nn.Parameter, loaded_weights: torch.Tensor, load_weight_id: str):
         """
@@ -337,11 +342,12 @@ class RowParallelLinear(LinearBase):
         input_size: int,
         output_size: int,
         bias: bool = True,
+        dtype: torch.dtype | None = None,
     ):
         tp_size = dist.get_world_size()
         assert input_size % tp_size == 0, "Input size must be divisible by tensor parallel size."
         # 每个 GPU 只存储 input_size/tp_size 的输入维度
-        super().__init__(input_size // tp_size, output_size, bias, tp_dim=1)
+        super().__init__(input_size // tp_size, output_size, bias, tp_dim=1, dtype=dtype)
 
     def weight_loader(self, param: nn.Parameter, loaded_weights: torch.Tensor):
         """

@@ -17,6 +17,7 @@ from myvllm.engine.scheduler import Scheduler
 from myvllm.engine.model_runner import ModelRunner
 from myvllm.sampling_parameters import SamplingParams
 from transformers import AutoTokenizer
+from myvllm.config import Config
 
 
 def worker_process(config, rank, event):
@@ -94,6 +95,7 @@ class LLMEngine:
             Scheduler必须在ModelRunner之后初始化，因为ModelRunner.__init__
             会调用dist.init_process_group()进行分布式barrier同步。
         """
+        config = config if isinstance(config, Config) else Config(config)
         self.config = config
         world_size = config.get("world_size", 1)
 

@@ -10,7 +10,7 @@ from myvllm.utils import get_context
 # 在词汇表维度上进行分片（而非嵌入维度），将大词汇表分布到多个 GPU 上
 # 例如：50000 个词汇，4 个 GPU，每个 GPU 负责约 12500 个词汇的嵌入
 class VocabParallelEmbedding(nn.Module):
-    def __init__(self, num_embeddings: int, embedding_dim: int):
+    def __init__(self, num_embeddings: int, embedding_dim: int, dtype: torch.dtype | None = None):
         super().__init__()
         # 获取张量并行（Tensor Parallelism）的总 GPU 数量和当前 GPU 的编号
         self.tp_size = dist.get_world_size()
@@ -26,7 +26,7 @@ class VocabParallelEmbedding(nn.Module):
         self.embedding_dim = embedding_dim
 
         # 创建当前分片的权重参数：[当前分片词汇数, 嵌入维度]
-        self.weight = nn.Parameter(torch.empty(self.num_embeddings_per_partition, embedding_dim))
+        self.weight = nn.Parameter(torch.empty(self.num_embeddings_per_partition, embedding_dim, dtype=dtype))
         # 绑定自定义的权重加载器，用于从检查点加载分片权重
         self.weight.weight_loader = self.weight_loader
 
@@ -101,8 +101,8 @@ class VocabParallelEmbedding(nn.Module):
 # 继承自 VocabParallelEmbedding，实现权重共享（weight tying）
 # 用于将隐藏状态映射到词汇表 logits，通常与输入嵌入层共享权重
 class ParallelLMHead(VocabParallelEmbedding):
-    def __init__(self, num_embeddings: int, embedding_dim: int):
-        super().__init__(num_embeddings, embedding_dim)
+    def __init__(self, num_embeddings: int, embedding_dim: int, dtype: torch.dtype | None = None):
+        super().__init__(num_embeddings, embedding_dim, dtype=dtype)
 
     # x: [batch_size, seq_len, hidden_size]
     # weight: [vocab_size_per_partition, hidden_size]

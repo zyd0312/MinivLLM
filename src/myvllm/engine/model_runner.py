@@ -52,48 +52,71 @@ class ModelRunner:
         dist.init_process_group('nccl', "tcp://localhost:12345", world_size=config['world_size'], rank=rank)
         torch.cuda.set_device(rank)
 
-        # 根据模型名称创建对应的模型实例
+        # 根据模型名称或显式量化配置创建对应的模型实例
         # 支持的模型: Qwen3-0.6B, Llama-3.2-1B-Instruct
         path_str = self.config['model_name_or_path']
         model_name = Path(path_str).name
-        match model_name:
-            case 'Qwen3-0.6B':
-                self.model = Qwen3ForCausalLM(
-                    vocab_size=config['vocab_size'],
-                    hidden_size=config['hidden_size'],
-                    num_heads=config['num_heads'],
-                    head_dim=config['head_dim'],
-                    scale=config['scale'],
-                    num_kv_heads=config['num_kv_heads'],
-                    rms_norm_epsilon=config['rms_norm_epsilon'],
-                    qkv_bias=config['qkv_bias'],
-                    base=config['base'],
-                    max_position=config['max_position'],
-                    intermediate_size=config['intermediate_size'],
-                    ffn_bias=config['ffn_bias'],
-                    num_layers=config['num_layers'],
-                    tie_word_embeddings=config['tie_word_embeddings'],
-                    block_size=self.block_size,
-                )
-            case 'Llama-3.2-1B-Instruct':
-                self.model = LlamaForCausalLM(
-                    vocab_size=config['vocab_size'],
-                    hidden_size=config['hidden_size'],
-                    head_dim=config['head_dim'],
-                    num_qo_heads=config['num_qo_heads'],
-                    num_kv_heads=config['num_kv_heads'],
-                    has_attn_bias=config['has_attn_bias'],
-                    rms_norm_epsilon=config['rms_norm_epsilon'],
-                    rope_base=config['rope_base'],
-                    max_position_embeddings=config['max_position_embeddings'],
-                    intermediate_size=config['intermediate_size'],
-                    ffn_bias=config['ffn_bias'],
-                    num_layers=config['num_layers'],
-                    block_size=self.block_size,
-                    tie_word_embeddings=config['tie_word_embeddings'],
-                )
-            case _:
-                raise Exception(f"Unsupported model: {config['model_name_or_path']}")
+        quant_config = config.get("quantization_config")
+        model_dtype = torch.float16 if quant_config is not None else None
+        if quant_config is not None:
+            self.model = Qwen3ForCausalLM(
+                vocab_size=config['vocab_size'],
+                hidden_size=config['hidden_size'],
+                num_heads=config['num_heads'],
+                head_dim=config['head_dim'],
+                scale=config['scale'],
+                num_kv_heads=config['num_kv_heads'],
+                rms_norm_epsilon=config['rms_norm_epsilon'],
+                qkv_bias=config['qkv_bias'],
+                base=config['base'],
+                max_position=config['max_position'],
+                intermediate_size=config['intermediate_size'],
+                ffn_bias=config['ffn_bias'],
+                num_layers=config['num_layers'],
+                tie_word_embeddings=config['tie_word_embeddings'],
+                block_size=self.block_size,
+                quant_config=quant_config,
+                dtype=model_dtype,
+            )
+        else:
+            match model_name:
+                case 'Qwen3-0.6B':
+                    self.model = Qwen3ForCausalLM(
+                        vocab_size=config['vocab_size'],
+                        hidden_size=config['hidden_size'],
+                        num_heads=config['num_heads'],
+                        head_dim=config['head_dim'],
+                        scale=config['scale'],
+                        num_kv_heads=config['num_kv_heads'],
+                        rms_norm_epsilon=config['rms_norm_epsilon'],
+                        qkv_bias=config['qkv_bias'],
+                        base=config['base'],
+                        max_position=config['max_position'],
+                        intermediate_size=config['intermediate_size'],
+                        ffn_bias=config['ffn_bias'],
+                        num_layers=config['num_layers'],
+                        tie_word_embeddings=config['tie_word_embeddings'],
+                        block_size=self.block_size,
+                    )
+                case 'Llama-3.2-1B-Instruct':
+                    self.model = LlamaForCausalLM(
+                        vocab_size=config['vocab_size'],
+                        hidden_size=config['hidden_size'],
+                        head_dim=config['head_dim'],
+                        num_qo_heads=config['num_qo_heads'],
+                        num_kv_heads=config['num_kv_heads'],
+                        has_attn_bias=config['has_attn_bias'],
+                        rms_norm_epsilon=config['rms_norm_epsilon'],
+                        rope_base=config['rope_base'],
+                        max_position_embeddings=config['max_position_embeddings'],
+                        intermediate_size=config['intermediate_size'],
+                        ffn_bias=config['ffn_bias'],
+                        num_layers=config['num_layers'],
+                        block_size=self.block_size,
+                        tie_word_embeddings=config['tie_word_embeddings'],
+                    )
+                case _:
+                    raise Exception(f"Unsupported model: {config['model_name_or_path']}")
 
         # 将模型移动到对应的GPU上（在加载权重之前）
         self.model = self.model.cuda(rank)
@@ -111,7 +134,7 @@ class ModelRunner:
         self.sampler = SamplerLayer()
 
         # 保存默认数据类型（在allocate_kv_cache中需要用到）
-        self.default_dtype = torch.get_default_dtype()
+        self.default_dtype = model_dtype or torch.get_default_dtype()
 
         # Debug标志：用于标记第一次decode步骤
         self._first_decode = False
@@ -280,9 +303,23 @@ class ModelRunner:
         torch.cuda.reset_peak_memory_stats()
 
         # 计算最大batch size
-        max_tokens = self.config['max_num_batch_tokens']
+        # The scheduler uses the plural ``max_num_batched_tokens`` name.
+        # Keep accepting the older singular key for existing demo/benchmark
+        # configurations while allowing new service configs to use one name.
+        max_tokens = self.config.get(
+            'max_num_batched_tokens',
+            self.config.get('max_num_batch_tokens'),
+        )
+        if max_tokens is None:
+            raise KeyError(
+                "Missing max_num_batched_tokens (or legacy "
+                "max_num_batch_tokens) in model config"
+            )
         max_model_length = self.config['max_model_length']
-        batch_size = max_tokens // max_model_length
+        # A long context can exceed the token budget used for warmup. Keep one
+        # sequence in that case; a zero-sized warmup cannot initialize the
+        # attention/KV-cache path.
+        batch_size = max(1, max_tokens // max_model_length)
 
         # 创建虚拟序列（填充0）进行预热
         seqs = [
@@ -368,6 +405,7 @@ class ModelRunner:
             self.block_size,
             num_kv_heads,
             head_dim,
+            dtype=self.default_dtype,
             device=f'cuda:{self.rank}'
         )
 
