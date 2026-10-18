@@ -57,6 +57,7 @@ class ModelRunner:
         path_str = self.config['model_name_or_path']
         model_name = Path(path_str).name
         quant_config = config.get("quantization_config")
+        gptq_backend = config.get("gptq_backend", "reference")
         model_dtype = torch.float16 if quant_config is not None else None
         if quant_config is not None:
             self.model = Qwen3ForCausalLM(
@@ -76,6 +77,7 @@ class ModelRunner:
                 tie_word_embeddings=config['tie_word_embeddings'],
                 block_size=self.block_size,
                 quant_config=quant_config,
+                gptq_backend=gptq_backend,
                 dtype=model_dtype,
             )
         else:

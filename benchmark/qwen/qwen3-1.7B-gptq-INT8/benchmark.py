@@ -184,6 +184,7 @@ def build_config(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "model_name_or_path": str(Path(args.model_path).expanduser().resolve()),
         "quantization": "gptq",
+        "gptq_backend": args.gptq_backend,
         "world_size": 1,
         "enforce_eager": True,
         "max_num_sequences": args.batch_size,
@@ -381,6 +382,7 @@ def markdown_report(report: dict[str, Any]) -> str:
         f"- GPU：`{metadata.get('device', '-')}`",
         f"- PyTorch/CUDA：`{metadata.get('torch', '-')}` / `{metadata.get('cuda', '-')}`",
         f"- 模型：`{metadata.get('model_path', '-')}`",
+        f"- GPTQ backend：`{metadata.get('gptq_backend', '-')}`",
         "",
         "## 测试配置",
         "",
@@ -591,6 +593,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt-file", help="UTF-8 file with one prompt per line")
     parser.add_argument("--chat-template", action="store_true", help="Apply the checkpoint chat template")
     parser.add_argument("--profile-projections", action="store_true", help="Record GPTQ dequantization and matmul CUDA event timings")
+    parser.add_argument(
+        "--gptq-backend",
+        choices=("reference", "fused", "fused_decode", "fused_prefill"),
+        default=os.environ.get("GPTQ_BACKEND", "reference"),
+        help="GPTQLinear runtime backend",
+    )
     parser.add_argument("--correctness", action="store_true", help="Compare one fixed prompt with Transformers/GPTQModel")
     parser.add_argument("--seed", type=int, default=1234)
     return parser.parse_args()
@@ -600,6 +608,8 @@ def main() -> int:
     args = parse_args()
     if args.iterations <= 0 or args.warmup < 0 or args.batch_size <= 0 or args.max_tokens <= 0:
         raise ValueError("iterations, batch-size and max-tokens must be positive; warmup cannot be negative")
+    if args.profile_projections and args.gptq_backend != "reference":
+        raise ValueError("projection profiler currently measures the reference GPTQ backend only")
     if not torch.cuda.is_available():
         raise RuntimeError("Qwen3 GPTQ benchmark requires CUDA; use tests/test_gptq.py for CPU layout checks")
     torch.manual_seed(args.seed)
@@ -657,6 +667,7 @@ def main() -> int:
             "torch": torch.__version__,
             "cuda": torch.version.cuda,
             "seed": args.seed,
+            "gptq_backend": args.gptq_backend,
         },
         "input": {
             "prompts": prompts,

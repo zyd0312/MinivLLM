@@ -56,6 +56,7 @@ class Qwen3Attention(nn.Module):
         max_position: int = 16384,
         block_size: int = 256,
         quant_config: GPTQConfig | None = None,
+        gptq_backend: str = "reference",
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
@@ -87,9 +88,9 @@ class Qwen3Attention(nn.Module):
         else:
             if self.tp_size != 1 or qkv_bias:
                 raise ValueError("GPTQ Qwen3 attention requires one GPU and no projection bias")
-            self.q_proj = GPTQLinear(hidden_size, head_dim * num_heads, quant_config)
-            self.k_proj = GPTQLinear(hidden_size, head_dim * self.total_num_kv_heads, quant_config)
-            self.v_proj = GPTQLinear(hidden_size, head_dim * self.total_num_kv_heads, quant_config)
+            self.q_proj = GPTQLinear(hidden_size, head_dim * num_heads, quant_config, backend=gptq_backend)
+            self.k_proj = GPTQLinear(hidden_size, head_dim * self.total_num_kv_heads, quant_config, backend=gptq_backend)
+            self.v_proj = GPTQLinear(hidden_size, head_dim * self.total_num_kv_heads, quant_config, backend=gptq_backend)
         # 每个 GPU 上的 Q 和 KV 张量大小
         self.q_size = head_dim * self.num_heads
         self.kv_size = head_dim * self.num_kv_heads
@@ -126,7 +127,12 @@ class Qwen3Attention(nn.Module):
                 dtype=dtype,
             )
         else:
-            self.o_proj = GPTQLinear(head_dim * self.total_num_heads, hidden_size, quant_config)
+            self.o_proj = GPTQLinear(
+                head_dim * self.total_num_heads,
+                hidden_size,
+                quant_config,
+                backend=gptq_backend,
+            )
 
     def forward(
         self,
@@ -226,6 +232,7 @@ class Qwen3MLP(nn.Module):
         intermediate_size: int,
         bias: bool = True,
         quant_config: GPTQConfig | None = None,
+        gptq_backend: str = "reference",
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
@@ -242,8 +249,8 @@ class Qwen3MLP(nn.Module):
         else:
             if dist.get_world_size() != 1 or bias:
                 raise ValueError("GPTQ Qwen3 MLP requires one GPU and no projection bias")
-            self.gate_proj = GPTQLinear(hidden_size, intermediate_size, quant_config)
-            self.up_proj = GPTQLinear(hidden_size, intermediate_size, quant_config)
+            self.gate_proj = GPTQLinear(hidden_size, intermediate_size, quant_config, backend=gptq_backend)
+            self.up_proj = GPTQLinear(hidden_size, intermediate_size, quant_config, backend=gptq_backend)
         # SwiGLU 激活：SiLU(gate) * up
         self.activation = SiluAndMul()
         # down 投影：将中间维度映射回隐藏维度
@@ -255,7 +262,7 @@ class Qwen3MLP(nn.Module):
                 dtype=dtype,
             )
         else:
-            self.down_proj = GPTQLinear(intermediate_size, hidden_size, quant_config)
+            self.down_proj = GPTQLinear(intermediate_size, hidden_size, quant_config, backend=gptq_backend)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -320,6 +327,7 @@ class Qwen3DecoderLayer(nn.Module):
         ffn_bias: bool = True,
         block_size: int = 256,
         quant_config: GPTQConfig | None = None,
+        gptq_backend: str = "reference",
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
@@ -340,6 +348,7 @@ class Qwen3DecoderLayer(nn.Module):
             max_position=max_position,
             block_size=block_size,
             quant_config=quant_config,
+            gptq_backend=gptq_backend,
             dtype=dtype,
         )
         # 注意力后层归一化
@@ -350,6 +359,7 @@ class Qwen3DecoderLayer(nn.Module):
             intermediate_size=intermediate_size,
             bias=ffn_bias,
             quant_config=quant_config,
+            gptq_backend=gptq_backend,
             dtype=dtype,
         )
 
@@ -450,6 +460,7 @@ class Qwen3Model(nn.Module):
         num_layers: int = 12,
         block_size: int = 256,
         quant_config: GPTQConfig | None = None,
+        gptq_backend: str = "reference",
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
@@ -475,6 +486,7 @@ class Qwen3Model(nn.Module):
                 ffn_bias=ffn_bias,
                 block_size=block_size,
                 quant_config=quant_config,
+                gptq_backend=gptq_backend,
                 dtype=dtype,
             ) for _ in range(num_layers)
         ])
@@ -566,6 +578,7 @@ class Qwen3ForCausalLM(nn.Module):
         tie_word_embeddings: bool = False,
         block_size: int = 256,
         quant_config: GPTQConfig | None = None,
+        gptq_backend: str = "reference",
         dtype: torch.dtype | None = None,
     ):
         super().__init__()
@@ -589,6 +602,7 @@ class Qwen3ForCausalLM(nn.Module):
             num_layers=num_layers,
             block_size=block_size,
             quant_config=quant_config,
+            gptq_backend=gptq_backend,
             dtype=dtype,
         )
         # 语言模型头（将隐藏状态映射到词汇表 logits）
