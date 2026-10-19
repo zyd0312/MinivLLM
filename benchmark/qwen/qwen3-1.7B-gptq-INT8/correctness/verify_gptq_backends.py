@@ -13,8 +13,8 @@ Example::
         --model-path /path/to/Qwen3-1.7B-GPTQ-Int8 \
         --candidate-backend fused \
         --chat-template \
-        --output stage1-fused-results/backend-correctness.json \
-        --report stage1-fused-results/backend-correctness.md
+        --output results/correctness/fused/run-<timestamp>/backend-correctness.json \
+        --report results/correctness/fused/run-<timestamp>/backend-correctness.md
 """
 
 from __future__ import annotations
@@ -33,7 +33,14 @@ import torch
 import torch.nn.functional as F
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+def _find_repo_root() -> Path:
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src").is_dir() and (parent / ".git").exists():
+            return parent
+    raise RuntimeError("could not locate the repository root from verify_gptq_backends.py")
+
+
+REPO_ROOT = _find_repo_root()
 SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))

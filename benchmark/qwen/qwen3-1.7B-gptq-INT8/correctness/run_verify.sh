@@ -2,21 +2,22 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 DEFAULT_MODEL_PATH="$HOME/project/LLM/models/qwen/Qwen3-1.7B-GPTQ-Int8"
 MODEL_PATH="${MODEL_PATH:-$DEFAULT_MODEL_PATH}"
-OUTPUT_DIR="${OUTPUT_DIR:-${SCRIPT_DIR}/stage1-fused-results}"
+REFERENCE_BACKEND="${REFERENCE_BACKEND:-reference}"
+CANDIDATE_BACKEND="${CANDIDATE_BACKEND:-fused}"
+OUTPUT_DIR="${OUTPUT_DIR:-${ROOT_DIR}/results/correctness/${CANDIDATE_BACKEND}/run-$(date +'%Y%m%d-%H%M%S')-$$}"
 RUN_ID="$(date +'%Y%m%d-%H%M%S')-$$"
 OUTPUT_JSON="${OUTPUT_JSON:-${OUTPUT_DIR%/}/backend-correctness-${RUN_ID}.json}"
 REPORT_MD="${REPORT_MD:-${OUTPUT_JSON%.*}.md}"
 
 DEFAULT_PYTHON="python3"
-if [[ -x "$SCRIPT_DIR/../../../.venv/bin/python" ]]; then
-  DEFAULT_PYTHON="$SCRIPT_DIR/../../../.venv/bin/python"
+if [[ -x "$ROOT_DIR/../../../.venv/bin/python" ]]; then
+  DEFAULT_PYTHON="$ROOT_DIR/../../../.venv/bin/python"
 fi
 PYTHON="${PYTHON:-$DEFAULT_PYTHON}"
 
-REFERENCE_BACKEND="${REFERENCE_BACKEND:-reference}"
-CANDIDATE_BACKEND="${CANDIDATE_BACKEND:-fused}"
 PROMPT="${PROMPT:-}"
 PROMPT_FILE="${PROMPT_FILE:-}"
 CHAT_TEMPLATE="${CHAT_TEMPLATE:-1}"

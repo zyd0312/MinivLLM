@@ -1,0 +1,1128 @@
+{
+  "timestamp_utc": "2026-10-18T12:09:27Z",
+  "model_path": "/home/zzzz/project/LLM/models/qwen/Qwen3-1.7B-GPTQ-Int8",
+  "backend": "fused",
+  "prompt": "<|im_start|>user\nExplain why the sky appears blue in two concise paragraphs.<|im_end|>\n<|im_start|>assistant\n",
+  "prompt_tokens": 20,
+  "config": {
+    "max_tokens": 8,
+    "warmup": 1,
+    "max_model_length": 512,
+    "max_num_batched_tokens": 1024,
+    "max_cached_blocks": 1024,
+    "block_size": 256,
+    "gpu_memory_utilization": 0.9,
+    "record_shapes": true,
+    "profile_memory": true,
+    "with_stack": false
+  },
+  "loading_ms": 11372.745589003898,
+  "warmup_records": [
+    {
+      "phase": "prefill",
+      "phase_hint": "prefill",
+      "processed_tokens": 21,
+      "wall_ms": 717.7936070002033,
+      "cuda_ms": 717.6422119140625
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 538.5934289952274,
+      "cuda_ms": 538.5391235351562
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 52.47528899781173,
+      "cuda_ms": 52.44393539428711
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 42.80071799439611,
+      "cuda_ms": 42.76553726196289
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 39.42963699955726,
+      "cuda_ms": 39.397216796875
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 50.02002399851335,
+      "cuda_ms": 49.9859504699707
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 46.93498500273563,
+      "cuda_ms": 46.890174865722656
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 50.70200599584496,
+      "cuda_ms": 50.66934585571289
+    }
+  ],
+  "profile_records": [
+    {
+      "phase": "prefill",
+      "phase_hint": "prefill",
+      "processed_tokens": 21,
+      "wall_ms": 59.66277300467482,
+      "cuda_ms": 59.57868957519531
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 53.61488799826475,
+      "cuda_ms": 53.566017150878906
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 44.41161000431748,
+      "cuda_ms": 44.37702560424805
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 70.25926300411811,
+      "cuda_ms": 70.22988891601562
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 47.62865899829194,
+      "cuda_ms": 47.58425521850586
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 54.23466300271684,
+      "cuda_ms": 54.202430725097656
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 59.7989090019837,
+      "cuda_ms": 59.7652473449707
+    },
+    {
+      "phase": "decode",
+      "phase_hint": "decode",
+      "processed_tokens": 1,
+      "wall_ms": 61.311963996558916,
+      "cuda_ms": 61.22518539428711
+    }
+  ],
+  "stage_summary": {
+    "prefill": {
+      "count": 1,
+      "wall_ms": {
+        "count": 1,
+        "min_ms": 59.66277300467482,
+        "median_ms": 59.66277300467482,
+        "p90_ms": 59.66277300467482,
+        "mean_ms": 59.66277300467482,
+        "max_ms": 59.66277300467482
+      },
+      "cuda_ms": {
+        "count": 1,
+        "min_ms": 59.57868957519531,
+        "median_ms": 59.57868957519531,
+        "p90_ms": 59.57868957519531,
+        "mean_ms": 59.57868957519531,
+        "max_ms": 59.57868957519531
+      },
+      "processed_tokens": 21
+    },
+    "decode": {
+      "count": 7,
+      "wall_ms": {
+        "count": 7,
+        "min_ms": 44.41161000431748,
+        "median_ms": 54.23466300271684,
+        "p90_ms": 64.8908835995826,
+        "mean_ms": 55.89427942946453,
+        "max_ms": 70.25926300411811
+      },
+      "cuda_ms": {
+        "count": 7,
+        "min_ms": 44.37702560424805,
+        "median_ms": 54.202430725097656,
+        "p90_ms": 64.82706680297852,
+        "mean_ms": 55.85000719342913,
+        "max_ms": 70.22988891601562
+      },
+      "processed_tokens": 7
+    }
+  },
+  "memory": {
+    "allocated_bytes": 6789922816,
+    "reserved_bytes": 6813646848,
+    "peak_allocated_bytes": 6791236096,
+    "peak_reserved_bytes": 6813646848
+  },
+  "top_events": [
+    {
+      "name": "minivllm.decode.engine_step",
+      "calls": 7,
+      "self_cpu_ms": 198.4912190000009,
+      "cpu_total_ms": 390.48684,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "minivllm.prefill.engine_step",
+      "calls": 1,
+      "self_cpu_ms": 27.706053999999856,
+      "cpu_total_ms": 59.396826999999995,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "## Call CompiledFxGraph ffvf7qxxpt7qrrdceopzzwi7ee6wf5ryetiqw3g7mfykkm6b3afd ##",
+      "calls": 399,
+      "self_cpu_ms": 19.601296000000648,
+      "cpu_total_ms": 27.655984000000398,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "## Call CompiledFxGraph fmfuv5i3nqtdmdg6aeyozimpba2zcaixbbbfel7jxzzpbnrw3tgn ##",
+      "calls": 392,
+      "self_cpu_ms": 18.406151000000317,
+      "cpu_total_ms": 27.21581500000014,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "aten::copy_",
+      "calls": 38,
+      "self_cpu_ms": 16.059138999999863,
+      "cpu_total_ms": 16.059138999999863,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1
+        ],
+        [
+          1
+        ],
+        []
+      ]
+    },
+    {
+      "name": "TorchDynamo Cache Lookup",
+      "calls": 1360,
+      "self_cpu_ms": 15.39887599999906,
+      "cpu_total_ms": 15.39887599999906,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "Torch-Compiled Region: 0/4",
+      "calls": 399,
+      "self_cpu_ms": 11.423582000000067,
+      "cpu_total_ms": 40.990841000000245,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "## Call CompiledFxGraph fhwel7axcf4i23zceukczppz5a2iulevtgccmcfip6ks72gahuze ##",
+      "calls": 196,
+      "self_cpu_ms": 11.370802999998915,
+      "cpu_total_ms": 18.8138369999997,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "Torch-Compiled Region: 0/5",
+      "calls": 392,
+      "self_cpu_ms": 11.271639000000082,
+      "cpu_total_ms": 41.431428000000025,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "## Call CompiledFxGraph fbpcpdnscprhs5imt4potezua4yibn25rtuduszr7b7qditcbkwr ##",
+      "calls": 196,
+      "self_cpu_ms": 9.131800000000403,
+      "cpu_total_ms": 12.788355000000447,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "triton_red_fused__to_copy_add_mean_mul_pow_rsqrt_0",
+      "calls": 399,
+      "self_cpu_ms": 8.054687999999746,
+      "cpu_total_ms": 8.054687999999746,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          2048
+        ],
+        [
+          2048
+        ],
+        [
+          1,
+          2048
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::cat",
+      "calls": 448,
+      "self_cpu_ms": 7.100978000000232,
+      "cpu_total_ms": 7.100978000000232,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::add",
+      "calls": 392,
+      "self_cpu_ms": 6.493934999999692,
+      "cpu_total_ms": 6.493934999999692,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          2048
+        ],
+        [
+          1,
+          2048
+        ],
+        []
+      ]
+    },
+    {
+      "name": "Torch-Compiled Region: 2/2",
+      "calls": 196,
+      "self_cpu_ms": 5.475265999999428,
+      "cpu_total_ms": 19.164525000000037,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "Pregraph bytecode",
+      "calls": 1360,
+      "self_cpu_ms": 4.999101999999253,
+      "cpu_total_ms": 4.999101999999253,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "triton_per_fused__to_copy_add_mean_mul_pow_rsqrt_0",
+      "calls": 196,
+      "self_cpu_ms": 4.918124000000185,
+      "cpu_total_ms": 4.918124000000185,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          16,
+          128
+        ],
+        [
+          128
+        ],
+        [
+          1,
+          16,
+          128
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::empty",
+      "calls": 1728,
+      "self_cpu_ms": 4.810898999999838,
+      "cpu_total_ms": 4.810898999999838,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [],
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "Torch-Compiled Region: 1/2",
+      "calls": 196,
+      "self_cpu_ms": 4.750748000000633,
+      "cpu_total_ms": 25.132006000000175,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "triton_poi_fused__to_copy_add_cat_index_mul_split_sub_unsqueeze_0",
+      "calls": 196,
+      "self_cpu_ms": 4.240105000000367,
+      "cpu_total_ms": 4.240105000000367,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          16,
+          128
+        ],
+        [
+          1
+        ],
+        [
+          40960,
+          128
+        ],
+        [
+          1,
+          16,
+          128
+        ],
+        []
+      ]
+    },
+    {
+      "name": "triton_per_fused__to_copy_add_mean_mul_pow_rsqrt_0",
+      "calls": 196,
+      "self_cpu_ms": 3.891539999999637,
+      "cpu_total_ms": 3.891539999999637,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          8,
+          128
+        ],
+        [
+          128
+        ],
+        [
+          1,
+          8,
+          128
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "AOTDispatcher Runtime Wrapper Prologue",
+      "calls": 1360,
+      "self_cpu_ms": 3.8153100000003826,
+      "cpu_total_ms": 3.8153100000003826,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "aten::reshape",
+      "calls": 2940,
+      "self_cpu_ms": 3.7803429999979925,
+      "cpu_total_ms": 5.328368000000061,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          2048
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::copy_",
+      "calls": 58,
+      "self_cpu_ms": 3.7092160000000054,
+      "cpu_total_ms": 3.7092160000000054,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          2
+        ],
+        [
+          2
+        ],
+        []
+      ]
+    },
+    {
+      "name": "triton_poi_fused_mul_silu_split_0",
+      "calls": 196,
+      "self_cpu_ms": 3.656555000000044,
+      "cpu_total_ms": 3.656555000000044,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          12288
+        ],
+        [
+          1,
+          6144
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::sub",
+      "calls": 204,
+      "self_cpu_ms": 3.476883999999809,
+      "cpu_total_ms": 3.476883999999809,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "triton_poi_fused__to_copy_add_cat_index_mul_split_sub_unsqueeze_1",
+      "calls": 196,
+      "self_cpu_ms": 3.2029290000004185,
+      "cpu_total_ms": 3.2029290000004185,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          8,
+          128
+        ],
+        [
+          1
+        ],
+        [
+          40960,
+          128
+        ],
+        [
+          1,
+          8,
+          128
+        ],
+        []
+      ]
+    },
+    {
+      "name": "## Call CompiledFxGraph fintnwvbeurtnqc423scnhreq5lm7h27cuym6zp2q52ydf57gzfi ##",
+      "calls": 57,
+      "self_cpu_ms": 2.5033919999999936,
+      "cpu_total_ms": 3.609342999999992,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "## Call CompiledFxGraph fp6vfnrengrg37jjoqnfkaszxxlshqogby4uuy5eutjhvcnqq3ua ##",
+      "calls": 56,
+      "self_cpu_ms": 2.4000399999999846,
+      "cpu_total_ms": 3.435911000000002,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "Torch-Compiled Region: 0/2",
+      "calls": 57,
+      "self_cpu_ms": 1.6747590000000607,
+      "cpu_total_ms": 5.675498999999998,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "aten::view",
+      "calls": 3136,
+      "self_cpu_ms": 1.6687950000014897,
+      "cpu_total_ms": 1.6687950000014897,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          2048
+        ],
+        []
+      ]
+    },
+    {
+      "name": "## Call CompiledFxGraph fr3x7kfdj6slmdbpf4kvwjufwh4fb44h3z6b5ankvmtbivqff527 ##",
+      "calls": 8,
+      "self_cpu_ms": 1.6360010000001057,
+      "cpu_total_ms": 3.1434379999999655,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "Torch-Compiled Region: 0/3",
+      "calls": 56,
+      "self_cpu_ms": 1.4142050000000412,
+      "cpu_total_ms": 5.35778500000003,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "aten::empty_strided",
+      "calls": 357,
+      "self_cpu_ms": 1.352124000000296,
+      "cpu_total_ms": 1.352124000000296,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [],
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "## Call CompiledFxGraph fl74kv6dompuxay73yluqhmsqkoyzttp4gcay7lax26nlrtik62p ##",
+      "calls": 28,
+      "self_cpu_ms": 1.3498789999999576,
+      "cpu_total_ms": 2.217783999999979,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "## Call CompiledFxGraph fk2lu652vjfvedbrrlhvwax2muhsq454v6rd7kwcvc7upvjxbggk ##",
+      "calls": 28,
+      "self_cpu_ms": 1.2168960000000106,
+      "cpu_total_ms": 1.7925030000000037,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "triton_red_fused__to_copy_add_mean_mul_pow_rsqrt_0",
+      "calls": 57,
+      "self_cpu_ms": 1.1059509999999988,
+      "cpu_total_ms": 1.1059509999999988,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          2048
+        ],
+        [
+          2048
+        ],
+        [
+          20,
+          2048
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::copy_",
+      "calls": 30,
+      "self_cpu_ms": 0.9419890000000106,
+      "cpu_total_ms": 0.9419890000000106,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20
+        ],
+        [
+          20
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::reshape",
+      "calls": 784,
+      "self_cpu_ms": 0.8454190000011004,
+      "cpu_total_ms": 1.3184000000003506,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          6144
+        ],
+        []
+      ]
+    },
+    {
+      "name": "Torch-Compiled Region: 2/1",
+      "calls": 28,
+      "self_cpu_ms": 0.7495479999999789,
+      "cpu_total_ms": 2.751628999999999,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "aten::empty_like",
+      "calls": 196,
+      "self_cpu_ms": 0.7367919999992446,
+      "cpu_total_ms": 1.6252459999996063,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          16,
+          128
+        ],
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::add",
+      "calls": 56,
+      "self_cpu_ms": 0.6982790000000063,
+      "cpu_total_ms": 0.6982790000000063,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          2048
+        ],
+        [
+          20,
+          2048
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::split_with_sizes",
+      "calls": 196,
+      "self_cpu_ms": 0.6892679999994871,
+      "cpu_total_ms": 1.0973430000000226,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          4096
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::mm",
+      "calls": 8,
+      "self_cpu_ms": 0.6647190000000482,
+      "cpu_total_ms": 0.6647190000000482,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          2048
+        ],
+        [
+          2048,
+          151936
+        ]
+      ]
+    },
+    {
+      "name": "aten::copy_",
+      "calls": 56,
+      "self_cpu_ms": 0.6430330000000172,
+      "cpu_total_ms": 0.6430330000000172,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          8,
+          128
+        ],
+        [
+          20,
+          8,
+          128
+        ],
+        []
+      ]
+    },
+    {
+      "name": "Torch-Compiled Region: 1/1",
+      "calls": 28,
+      "self_cpu_ms": 0.6395830000000092,
+      "cpu_total_ms": 3.10258000000001,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "triton_poi_fused_mul_silu_split_0",
+      "calls": 28,
+      "self_cpu_ms": 0.5756069999999931,
+      "cpu_total_ms": 0.5756069999999931,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          12288
+        ],
+        [
+          20,
+          6144
+        ],
+        []
+      ]
+    },
+    {
+      "name": "triton_red_fused__to_copy_add_mean_mul_pow_rsqrt_0",
+      "calls": 28,
+      "self_cpu_ms": 0.5475360000000091,
+      "cpu_total_ms": 0.5475360000000091,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          16,
+          128
+        ],
+        [
+          128
+        ],
+        [
+          20,
+          16,
+          128
+        ],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "triton_poi_fused__to_copy_add_cat_index_mul_split_sub_unsqueeze_0",
+      "calls": 28,
+      "self_cpu_ms": 0.501821000000004,
+      "cpu_total_ms": 0.501821000000004,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          16,
+          128
+        ],
+        [
+          20
+        ],
+        [
+          40960,
+          128
+        ],
+        [
+          20,
+          16,
+          128
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "triton_red_fused__to_copy_add_mean_mul_pow_rsqrt_0",
+      "calls": 28,
+      "self_cpu_ms": 0.4883350000000087,
+      "cpu_total_ms": 0.4883350000000087,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          8,
+          128
+        ],
+        [
+          128
+        ],
+        [
+          20,
+          8,
+          128
+        ],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::view",
+      "calls": 784,
+      "self_cpu_ms": 0.47298099999925036,
+      "cpu_total_ms": 0.47298099999925036,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          6144
+        ],
+        []
+      ]
+    },
+    {
+      "name": "Torch-Compiled Region: 3/1",
+      "calls": 8,
+      "self_cpu_ms": 0.4530840000000098,
+      "cpu_total_ms": 3.7335030000000553,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": []
+    },
+    {
+      "name": "aten::view",
+      "calls": 784,
+      "self_cpu_ms": 0.4297189999997354,
+      "cpu_total_ms": 0.4297189999997354,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          1024
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::reshape",
+      "calls": 392,
+      "self_cpu_ms": 0.41119500000050174,
+      "cpu_total_ms": 0.6697850000006219,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          1024
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::as_strided",
+      "calls": 588,
+      "self_cpu_ms": 0.40807500000053554,
+      "cpu_total_ms": 0.40807500000053554,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          4096
+        ],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::reshape",
+      "calls": 196,
+      "self_cpu_ms": 0.39474400000066817,
+      "cpu_total_ms": 0.7124460000003527,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          16,
+          128
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::reshape",
+      "calls": 420,
+      "self_cpu_ms": 0.38419999999999643,
+      "cpu_total_ms": 0.5777770000000264,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          2048
+        ],
+        []
+      ]
+    },
+    {
+      "name": "aten::_to_copy",
+      "calls": 38,
+      "self_cpu_ms": 0.3798770000002332,
+      "cpu_total_ms": 16.601008000000053,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1
+        ],
+        [],
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "triton_red_fused__softmax__to_copy_div_prepare_softmax_online_unsqueeze_0",
+      "calls": 8,
+      "self_cpu_ms": 0.37163999999996306,
+      "cpu_total_ms": 0.37163999999996306,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          151936
+        ],
+        [
+          1
+        ],
+        [
+          1,
+          1,
+          19
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "triton_poi_fused__to_copy_add_cat_index_mul_split_sub_unsqueeze_1",
+      "calls": 28,
+      "self_cpu_ms": 0.36608400000001756,
+      "cpu_total_ms": 0.36608400000001756,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          20,
+          8,
+          128
+        ],
+        [
+          20
+        ],
+        [
+          40960,
+          128
+        ],
+        [
+          20,
+          8,
+          128
+        ],
+        [],
+        []
+      ]
+    },
+    {
+      "name": "aten::view",
+      "calls": 196,
+      "self_cpu_ms": 0.3177019999996846,
+      "cpu_total_ms": 0.3177019999996846,
+      "self_device_ms": 0.0,
+      "device_total_ms": 0.0,
+      "input_shapes": [
+        [
+          1,
+          16,
+          128
+        ],
+        []
+      ]
+    }
+  ],
+  "trace_path": "/home/zzzz/project/vllm-projects/MinivLLM/benchmark/qwen/qwen3-1.7B-gptq-INT8/results/system-profile/fused/run-20261018-200904-731561/trace.json",
+  "json_path": "/home/zzzz/project/vllm-projects/MinivLLM/benchmark/qwen/qwen3-1.7B-gptq-INT8/results/system-profile/fused/run-20261018-200904-731561/summary.json",
+  "profile_status": "cuda_activity_unavailable",
+  "cuda_trace": {
+    "cuda_device_activity_available": false,
+    "cuda_device_event_count": 0,
+    "reason": "CUPTI_ERROR_INVALID_DEVICE",
+    "trace_event_categories": [
+      "cpu_op",
+      "cpu_instant_event",
+      "user_annotation"
+    ]
+  }
+}

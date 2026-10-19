@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 EXTRA_ARGS=("$@")
 MODEL_PATH="${MODEL_PATH:-$HOME/project/LLM/models/qwen/Qwen3-1.7B-GPTQ-Int8}"
-OUTPUT_DIR="${OUTPUT_DIR:-${SCRIPT_DIR}/stage1-fused-results}"
+RESULTS_ROOT="${RESULTS_ROOT:-${OUTPUT_DIR:-${ROOT_DIR}/results}}"
 REFERENCE_MODEL_PATH="${REFERENCE_MODEL_PATH:-}"
 ITERATIONS="${ITERATIONS:-5}"
 WARMUP="${WARMUP:-2}"
@@ -21,9 +22,14 @@ RUN_BASELINE="${RUN_BASELINE:-1}"
 RUN_CORRECTNESS="${RUN_CORRECTNESS:-0}"
 CORRECTNESS_BACKEND="${CORRECTNESS_BACKEND:-$GPTQ_BACKEND}"
 CORRECTNESS_DECODE_STEPS="${CORRECTNESS_DECODE_STEPS:-4}"
+RUN_ID="$(date +'%Y%m%d-%H%M%S')-$$"
+BASELINE_OUTPUT_DIR="${BASELINE_OUTPUT_DIR:-${RESULTS_ROOT}/performance/${GPTQ_BACKEND}/run-${RUN_ID}}"
+PROFILE_OUTPUT_DIR="${PROFILE_OUTPUT_DIR:-${RESULTS_ROOT}/operator-profile/reference/run-${RUN_ID}}"
+CORRECTNESS_OUTPUT_DIR="${CORRECTNESS_OUTPUT_DIR:-${RESULTS_ROOT}/correctness/${CORRECTNESS_BACKEND}/run-${RUN_ID}}"
+
 DEFAULT_PYTHON="python3"
-if [[ -x "$SCRIPT_DIR/../../../.venv/bin/python" ]]; then
-  DEFAULT_PYTHON="$SCRIPT_DIR/../../../.venv/bin/python"
+if [[ -x "$ROOT_DIR/../../../.venv/bin/python" ]]; then
+  DEFAULT_PYTHON="$ROOT_DIR/../../../.venv/bin/python"
 fi
 PYTHON="${PYTHON:-$DEFAULT_PYTHON}"
 
@@ -46,8 +52,6 @@ if [[ "$RUN_CORRECTNESS" == "1" ]]; then
   esac
 fi
 
-# These options describe one fixed workload. Use --prompt/--prompt-file after
-# the script command to change the workload while keeping both runs identical.
 COMMON_ARGS=(
   --model-path "$MODEL_PATH"
   --iterations "$ITERATIONS"
@@ -65,14 +69,16 @@ if [[ -n "$PROMPT_FILE" ]]; then
   COMMON_ARGS+=(--prompt-file "$PROMPT_FILE")
 fi
 
-mkdir -p "$OUTPUT_DIR"
-BASELINE_JSON="${OUTPUT_DIR%/}/baseline.json"
-BASELINE_MD="${OUTPUT_DIR%/}/baseline.md"
-PROFILE_JSON="${OUTPUT_DIR%/}/projection-profile.json"
-PROFILE_MD="${OUTPUT_DIR%/}/projection-profile.md"
+BASELINE_JSON="${BASELINE_OUTPUT_DIR%/}/baseline.json"
+BASELINE_MD="${BASELINE_OUTPUT_DIR%/}/baseline.md"
+PROFILE_JSON="${PROFILE_OUTPUT_DIR%/}/projection-profile.json"
+PROFILE_MD="${PROFILE_OUTPUT_DIR%/}/projection-profile.md"
+CORRECTNESS_JSON="${CORRECTNESS_OUTPUT_DIR%/}/backend-correctness.json"
+CORRECTNESS_MD="${CORRECTNESS_OUTPUT_DIR%/}/backend-correctness.md"
 
 if [[ "$RUN_BASELINE" == "1" ]]; then
-  printf 'Running formal baseline (profiler disabled) ...\n'
+  mkdir -p "$BASELINE_OUTPUT_DIR"
+  printf 'Running formal %s baseline (profiler disabled) ...\n' "$GPTQ_BACKEND"
   BASELINE_ARGS=("${COMMON_ARGS[@]}" --gptq-backend "$GPTQ_BACKEND" --output "$BASELINE_JSON" --report "$BASELINE_MD")
   if [[ -n "$REFERENCE_MODEL_PATH" ]]; then
     BASELINE_ARGS+=(--reference-model-path "$REFERENCE_MODEL_PATH" --correctness)
@@ -82,11 +88,13 @@ else
   printf 'Skipping formal baseline (RUN_BASELINE=0) ...\n'
 fi
 
-printf '\nRunning projection profile (separate process, profiler enabled) ...\n'
+mkdir -p "$PROFILE_OUTPUT_DIR"
+printf '\nRunning reference projection profile (separate process, profiler enabled) ...\n'
 PROFILE_ARGS=("${COMMON_ARGS[@]}" --gptq-backend reference --output "$PROFILE_JSON" --report "$PROFILE_MD" --profile-projections)
 PROFILE_PROJECTIONS=1 "$PYTHON" "$SCRIPT_DIR/benchmark.py" "${PROFILE_ARGS[@]}" "$@"
 
 if [[ "$RUN_CORRECTNESS" == "1" ]]; then
+  mkdir -p "$CORRECTNESS_OUTPUT_DIR"
   printf '\nRunning reference/candidate correctness comparison ...\n'
   CORRECTNESS_ARGS=(
     --model-path "$MODEL_PATH"
@@ -99,8 +107,8 @@ if [[ "$RUN_CORRECTNESS" == "1" ]]; then
     --block-size "$BLOCK_SIZE"
     --gpu-memory-utilization "$GPU_MEMORY_UTILIZATION"
     --chat-template
-    --output "${OUTPUT_DIR%/}/backend-correctness.json"
-    --report "${OUTPUT_DIR%/}/backend-correctness.md"
+    --output "$CORRECTNESS_JSON"
+    --report "$CORRECTNESS_MD"
   )
   if [[ -n "$PROMPT_FILE" ]]; then
     CORRECTNESS_ARGS+=(--prompt-file "$PROMPT_FILE")
@@ -132,16 +140,20 @@ if [[ "$RUN_CORRECTNESS" == "1" ]]; then
         ;;
     esac
   done
-  "$PYTHON" "$SCRIPT_DIR/verify_gptq_backends.py" "${CORRECTNESS_ARGS[@]}"
+  "$PYTHON" "$ROOT_DIR/correctness/verify_gptq_backends.py" "${CORRECTNESS_ARGS[@]}"
 fi
 
-printf '\nStage 1 reports:\n  baseline JSON: %s\n  baseline Markdown: %s\n  profile JSON: %s\n  profile Markdown: %s\n' \
-  "$(realpath "$BASELINE_JSON")" \
-  "$(realpath "$BASELINE_MD")" \
+printf '\nStage 1 reports:\n'
+if [[ "$RUN_BASELINE" == "1" ]]; then
+  printf '  baseline JSON: %s\n  baseline Markdown: %s\n' \
+    "$(realpath "$BASELINE_JSON")" \
+    "$(realpath "$BASELINE_MD")"
+fi
+printf '  reference operator profile JSON: %s\n  reference operator profile Markdown: %s\n' \
   "$(realpath "$PROFILE_JSON")" \
   "$(realpath "$PROFILE_MD")"
 if [[ "$RUN_CORRECTNESS" == "1" ]]; then
   printf '  correctness JSON: %s\n  correctness Markdown: %s\n' \
-    "$(realpath "${OUTPUT_DIR%/}/backend-correctness.json")" \
-    "$(realpath "${OUTPUT_DIR%/}/backend-correctness.md")"
+    "$(realpath "$CORRECTNESS_JSON")" \
+    "$(realpath "$CORRECTNESS_MD")"
 fi

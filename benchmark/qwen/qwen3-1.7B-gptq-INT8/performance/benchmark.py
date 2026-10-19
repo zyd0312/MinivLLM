@@ -30,7 +30,14 @@ import torch
 import torch.nn.functional as F
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+def _find_repo_root() -> Path:
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "src").is_dir() and (parent / ".git").exists():
+            return parent
+    raise RuntimeError("could not locate the repository root from benchmark.py")
+
+
+REPO_ROOT = _find_repo_root()
 SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))

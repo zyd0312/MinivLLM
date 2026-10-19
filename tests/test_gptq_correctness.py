@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 
 
-MODULE_PATH = Path(__file__).parents[1] / "benchmark/qwen/qwen3-1.7B-gptq-INT8/verify_gptq_backends.py"
+MODULE_PATH = Path(__file__).parents[1] / "benchmark/qwen/qwen3-1.7B-gptq-INT8/correctness/verify_gptq_backends.py"
 SPEC = importlib.util.spec_from_file_location("verify_gptq_backends", MODULE_PATH)
 VERIFY = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
